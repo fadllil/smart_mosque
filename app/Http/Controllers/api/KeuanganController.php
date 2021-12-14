@@ -7,6 +7,7 @@ use App\Http\Utils\Response;
 use App\Models\Keuangan;
 use App\Models\Masjid;
 use App\Models\Pemasukan;
+use App\Models\PemasukanDetail;
 use App\Models\Pengeluaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,7 @@ use Exception;
 class KeuanganController extends Controller
 {
     public function getPemasukan($id){
-        $pemasukan = Pemasukan::where('id_masjid', $id)->latest()->get();
+        $pemasukan = Pemasukan::where('id_masjid', $id)->with('detailPemasukan')->latest()->get();
         if (!$pemasukan){
             return Response::failure('Pemasukan tidak ditemukan', 404);
         }
@@ -35,7 +36,6 @@ class KeuanganController extends Controller
         $validator = Validator::make($request->all(), [
             'id_masjid' => 'required',
             'nama' => 'required',
-            'nominal' => 'required',
             'keterangan' => 'required',
         ]);
         if ($validator->fails()) {
@@ -49,16 +49,43 @@ class KeuanganController extends Controller
 
         try {
             DB::beginTransaction();
-            Pemasukan::create($request->all());
+            $pemasukan = Pemasukan::create([
+                'id_masjid' => $request->id_masjid,
+                'nama' => $request->nama,
+                'keterangan' => $request->keterangan,
+                'jenis' => $request->jenis
+            ]);
+
+            $nominal = 0;
+            if ($request->jenis == 'Infak'){
+                $pemasukan->update(['nominal' => $request->nominal]);
+                $nominal = $request->nominal;
+            }else{
+
+                foreach ($request->donatur as $key => $id_user){
+                    $an = $request->an[$key];
+                    $nominal_donatur = $request->nominal_donatur[$key];
+                    $nominal += $nominal_donatur;
+                    PemasukanDetail::create([
+                        'id_pemasukan' => $pemasukan->id,
+                        'id_user' => $id_user,
+                        'an' => $an,
+                        'nominal' => $nominal_donatur
+                    ]);
+                    $pemasukan->update(['nominal' => $nominal]);
+                }
+            }
+
             $keuangan = Keuangan::where('id_masjid', $request->id_masjid)->first();
+
             if ($keuangan){
                 $keuangan->update([
-                    'saldo' => $keuangan->saldo + $request->nominal,
+                    'saldo' => $keuangan->saldo + $nominal,
                 ]);
             }else{
                 Keuangan::create([
                     'id_masjid' => $request->id_masjid,
-                    'saldo' => $request->nominal
+                    'saldo' => $nominal
                 ]);
             }
             DB::commit();

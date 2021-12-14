@@ -14,7 +14,18 @@ class Kegiatan extends Model
         'id_masjid',
         'nama',
         'jenis',
+        'status_iuran',
+        'status',
         'waktu',
         'tanggal'
     ];
+
+    public function anggota()
+    {
+        return $this->hasMany(KegiatanAnggota::class, 'id_kegiatan', 'id');
+    }
+    public function iuran()
+    {
+        return $this->hasMany(KegiatanIuran::class, 'id_kegiatan', 'id');
+    }
 }

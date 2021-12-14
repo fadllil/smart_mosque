@@ -68,6 +68,8 @@ Route::group(['prefix' => 'masjid','middleware' => 'jwt.auth'], function () {
         Route::post('/create', [KegiatanController::class, 'create']);
         Route::post('/update', [KegiatanController::class, 'update']);
         Route::get('/delete/{id}', [KegiatanController::class, 'delete']);
+        Route::get('/detail-anggota/{id}', [KegiatanController::class, 'detailAnggota']);
+        Route::get('/detail-iuran/{id}', [KegiatanController::class, 'detailIuran']);
     });
 
     Route::group(['prefix' => 'informasi'], function () {

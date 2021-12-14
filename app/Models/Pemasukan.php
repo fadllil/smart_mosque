@@ -16,4 +16,9 @@ class Pemasukan extends Model
         'nominal',
         'keterangan'
     ];
+
+    public function detailPemasukan()
+    {
+        return $this->hasMany(PemasukanDetail::class, 'id_pemasukan', 'id');
+    }
 }
